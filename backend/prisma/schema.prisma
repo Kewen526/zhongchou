@@ -1,0 +1,317 @@
+// Prisma Schema for Crowdfunding System
+// Database: MySQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// 用户表
+// =====================================================
+model User {
+  id                BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  username          String    @unique @db.VarChar(50)
+  password          String    @db.VarChar(255)
+  role              UserRole
+  parentId          BigInt?   @map("parent_id") @db.UnsignedBigInt
+  modulePermissions Json?     @map("module_permissions")
+  status            Int       @default(1) @db.UnsignedTinyInt
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // 关系
+  parent            User?     @relation("UserHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children          User[]    @relation("UserHierarchy")
+
+  // 创建的产品
+  createdProducts   Product[] @relation("ProductCreator")
+
+  // 对接的工厂产品
+  factoryProducts   Product[] @relation("ProductFactory")
+
+  // 发起的众筹
+  createdCrowdfundings Crowdfunding[] @relation("CrowdfundingCreator")
+
+  // 中标的众筹
+  wonCrowdfundings  Crowdfunding[] @relation("CrowdfundingWinner")
+
+  // 取消众筹
+  cancelledCrowdfundings Crowdfunding[] @relation("CrowdfundingCancelledBy")
+
+  // 标记失败的众筹
+  failedCrowdfundings Crowdfunding[] @relation("CrowdfundingFailedBy")
+
+  // 出资记录
+  investments       Investment[]
+
+  // 资金申请
+  fundApplications  FundApplication[] @relation("FundApplicationApplicant")
+
+  // 待审批的申请
+  pendingApprovals  FundApplication[] @relation("FundApplicationCurrentApprover")
+
+  // 审批记录
+  approvals         Approval[]
+
+  // 操作日志
+  operationLogs     OperationLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  product_dev
+  sales
+  supplier
+  supplier_sub
+  factory
+  factory_sub
+}
+
+// =====================================================
+// 期数表
+// =====================================================
+model Period {
+  id           BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  periodNumber Int          @map("period_number") @db.UnsignedInt
+  year         Int          @db.UnsignedInt
+  weekOfYear   Int          @map("week_of_year") @db.UnsignedInt
+  startDate    DateTime     @map("start_date") @db.Date
+  endDate      DateTime     @map("end_date") @db.Date
+  status       PeriodStatus @default(active)
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  // 关系
+  currentCrowdfundings Crowdfunding[] @relation("CrowdfundingCurrentPeriod")
+  startCrowdfundings   Crowdfunding[] @relation("CrowdfundingStartPeriod")
+  investments          Investment[]
+  fundApplications     FundApplication[]
+
+  @@unique([year, weekOfYear])
+  @@map("periods")
+}
+
+enum PeriodStatus {
+  active
+  closed
+}
+
+// =====================================================
+// 产品表
+// =====================================================
+model Product {
+  id                 BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  name               String              @db.VarChar(100)
+  productCode        String?             @map("product_code") @db.VarChar(50)
+  sku                String?             @db.VarChar(50)
+  link               String?             @db.VarChar(500)
+  factoryId          BigInt?             @map("factory_id") @db.UnsignedBigInt
+  factoryPrice       Decimal?            @map("factory_price") @db.Decimal(10, 2)
+  priceControl       String?             @map("price_control") @db.VarChar(100)
+  weight             Int?                @db.UnsignedInt
+  packageSize        String?             @map("package_size") @db.VarChar(100)
+  patentStatus       String?             @map("patent_status") @db.VarChar(50)
+  crowdfundingStatus CrowdfundingStatus  @default(not_started) @map("crowdfunding_status")
+  creatorId          BigInt              @map("creator_id") @db.UnsignedBigInt
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  // 关系
+  creator            User                @relation("ProductCreator", fields: [creatorId], references: [id])
+  factory            User?               @relation("ProductFactory", fields: [factoryId], references: [id], onDelete: SetNull)
+  images             ProductImage[]
+  crowdfunding       Crowdfunding?
+
+  @@map("products")
+}
+
+enum CrowdfundingStatus {
+  not_started
+  in_progress
+  success
+  failed
+  cancelled
+}
+
+// =====================================================
+// 产品图片表
+// =====================================================
+model ProductImage {
+  id        BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  productId BigInt         @map("product_id") @db.UnsignedBigInt
+  imageUrl  String         @map("image_url") @db.VarChar(500)
+  imageType ProductImageType @default(main) @map("image_type")
+  sortOrder Int            @default(0) @map("sort_order") @db.UnsignedInt
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  // 关系
+  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+enum ProductImageType {
+  main
+  real
+}
+
+// =====================================================
+// 众筹项目表
+// =====================================================
+model Crowdfunding {
+  id               BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  productId        BigInt             @unique @map("product_id") @db.UnsignedBigInt
+  title            String             @db.VarChar(200)
+  description      String?            @db.Text
+  targetAmount     Decimal            @map("target_amount") @db.Decimal(12, 2)
+  currentAmount    Decimal            @default(0) @map("current_amount") @db.Decimal(12, 2)
+  minInvestment    Decimal            @default(100) @map("min_investment") @db.Decimal(10, 2)
+  deadline         DateTime?          @db.DateTime
+  currentPeriodId  BigInt?            @map("current_period_id") @db.UnsignedBigInt
+  startPeriodId    BigInt?            @map("start_period_id") @db.UnsignedBigInt
+  status           CrowdfundingProjectStatus @default(in_progress)
+  winnerSupplierId BigInt?            @map("winner_supplier_id") @db.UnsignedBigInt
+  creatorId        BigInt             @map("creator_id") @db.UnsignedBigInt
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  successAt        DateTime?          @map("success_at")
+  cancelledAt      DateTime?          @map("cancelled_at")
+  cancelledBy      BigInt?            @map("cancelled_by") @db.UnsignedBigInt
+  failedAt         DateTime?          @map("failed_at")
+  failedBy         BigInt?            @map("failed_by") @db.UnsignedBigInt
+
+  // 关系
+  product          Product            @relation(fields: [productId], references: [id])
+  currentPeriod    Period?            @relation("CrowdfundingCurrentPeriod", fields: [currentPeriodId], references: [id])
+  startPeriod      Period?            @relation("CrowdfundingStartPeriod", fields: [startPeriodId], references: [id])
+  creator          User               @relation("CrowdfundingCreator", fields: [creatorId], references: [id])
+  winnerSupplier   User?              @relation("CrowdfundingWinner", fields: [winnerSupplierId], references: [id], onDelete: SetNull)
+  cancelledByUser  User?              @relation("CrowdfundingCancelledBy", fields: [cancelledBy], references: [id], onDelete: SetNull)
+  failedByUser     User?              @relation("CrowdfundingFailedBy", fields: [failedBy], references: [id], onDelete: SetNull)
+  investments      Investment[]
+  fundApplications FundApplication[]
+
+  @@map("crowdfundings")
+}
+
+enum CrowdfundingProjectStatus {
+  in_progress
+  success
+  failed
+  cancelled
+}
+
+// =====================================================
+// 出资记录表
+// =====================================================
+model Investment {
+  id             BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  crowdfundingId BigInt         @map("crowdfunding_id") @db.UnsignedBigInt
+  userId         BigInt         @map("user_id") @db.UnsignedBigInt
+  amount         Decimal        @db.Decimal(10, 2)
+  investmentType InvestmentType @map("investment_type")
+  periodId       BigInt         @map("period_id") @db.UnsignedBigInt
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  // 关系
+  crowdfunding   Crowdfunding   @relation(fields: [crowdfundingId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+  period         Period         @relation(fields: [periodId], references: [id])
+
+  @@map("investments")
+}
+
+enum InvestmentType {
+  initial
+  additional
+}
+
+// =====================================================
+// 资金使用申请表
+// =====================================================
+model FundApplication {
+  id                BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  applicantId       BigInt                @map("applicant_id") @db.UnsignedBigInt
+  crowdfundingId    BigInt                @map("crowdfunding_id") @db.UnsignedBigInt
+  periodId          BigInt                @map("period_id") @db.UnsignedBigInt
+  amount            Decimal               @db.Decimal(10, 2)
+  reason            String?               @db.Text
+  status            FundApplicationStatus @default(pending)
+  currentApproverId BigInt?               @map("current_approver_id") @db.UnsignedBigInt
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  // 关系
+  applicant         User                  @relation("FundApplicationApplicant", fields: [applicantId], references: [id])
+  crowdfunding      Crowdfunding          @relation(fields: [crowdfundingId], references: [id])
+  period            Period                @relation(fields: [periodId], references: [id])
+  currentApprover   User?                 @relation("FundApplicationCurrentApprover", fields: [currentApproverId], references: [id], onDelete: SetNull)
+  approvals         Approval[]
+
+  @@map("fund_applications")
+}
+
+enum FundApplicationStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+// =====================================================
+// 审批记录表
+// =====================================================
+model Approval {
+  id            BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  applicationId BigInt         @map("application_id") @db.UnsignedBigInt
+  approverId    BigInt         @map("approver_id") @db.UnsignedBigInt
+  action        ApprovalAction
+  comment       String?        @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  // 关系
+  application   FundApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  approver      User            @relation(fields: [approverId], references: [id])
+
+  @@map("approvals")
+}
+
+enum ApprovalAction {
+  approve
+  reject
+}
+
+// =====================================================
+// 操作日志表
+// =====================================================
+model OperationLog {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     BigInt?  @map("user_id") @db.UnsignedBigInt
+  username   String?  @db.VarChar(50)
+  module     String   @db.VarChar(50)
+  action     String   @db.VarChar(50)
+  targetType String?  @map("target_type") @db.VarChar(50)
+  targetId   BigInt?  @map("target_id") @db.UnsignedBigInt
+  beforeData Json?    @map("before_data")
+  afterData  Json?    @map("after_data")
+  ipAddress  String?  @map("ip_address") @db.VarChar(50)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // 关系
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([module])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("operation_logs")
+}

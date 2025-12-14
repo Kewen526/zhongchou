@@ -1,0 +1,13 @@
+
+# Environment
+.env
+.env.local
+
+# Prisma
+prisma/migrations/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
