@@ -11,8 +11,8 @@
 
 ### 1.2 后端信息
 - **后端框架**: NestJS (已部署完成)
-- **API基础路径**: `http://你的服务器IP:3000/api`
-- **API文档**: `http://你的服务器IP:3000/api/docs` (Swagger)
+- **API基础路径**: `https://api.keepcom.cn/api`
+- **API文档**: `https://api.keepcom.cn/api/docs` (Swagger)
 - **认证方式**: JWT Bearer Token
 
 ### 1.3 前端技术栈要求
