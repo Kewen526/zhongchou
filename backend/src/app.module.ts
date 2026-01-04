@@ -12,6 +12,7 @@ import { ProductsModule } from './products/products.module';
 import { CrowdfundingsModule } from './crowdfundings/crowdfundings.module';
 import { FundsModule } from './funds/funds.module';
 import { LogsModule } from './logs/logs.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LogsModule } from './logs/logs.module';
     CrowdfundingsModule,
     FundsModule,
     LogsModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [],
