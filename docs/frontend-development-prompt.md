@@ -750,6 +750,77 @@ Authorization: Bearer <token>
 Response: ["create", "update", "delete", "approve", "reject", "invest", "cancel"]
 ```
 
+### 4.7 文件上传接口
+
+#### 上传单个文件
+```
+POST /api/upload/single
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+Request Body:
+- file: 文件（支持 jpg, png, gif, webp, pdf，最大 10MB）
+
+Response:
+{
+  "url": "https://ceshi-1300392622.cos.ap-beijing.myqcloud.com/uploads/xxx.jpg",
+  "filename": "xxx.jpg"
+}
+```
+
+#### 批量上传文件（最多10个）
+```
+POST /api/upload/multiple
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+Request Body:
+- files: 文件数组
+
+Response:
+[
+  {
+    "url": "https://ceshi-1300392622.cos.ap-beijing.myqcloud.com/uploads/xxx1.jpg",
+    "filename": "xxx1.jpg"
+  },
+  {
+    "url": "https://ceshi-1300392622.cos.ap-beijing.myqcloud.com/uploads/xxx2.jpg",
+    "filename": "xxx2.jpg"
+  }
+]
+```
+
+#### 删除文件
+```
+DELETE /api/upload
+Authorization: Bearer <token>
+Content-Type: application/json
+
+Request Body:
+{
+  "url": "https://ceshi-1300392622.cos.ap-beijing.myqcloud.com/uploads/xxx.jpg"
+}
+
+Response:
+{
+  "message": "文件删除成功"
+}
+```
+
+**文件上传使用说明：**
+- 支持的文件类型：jpg, jpeg, png, gif, webp, pdf
+- 单文件最大：10MB
+- 批量上传最多：10个文件
+- 存储服务：腾讯云 COS
+- 上传后返回的 URL 可直接用于产品图片等字段
+
+**前端图片上传流程：**
+1. 用户选择图片
+2. 调用 `/api/upload/single` 或 `/api/upload/multiple` 上传
+3. 获取返回的 URL
+4. 将 URL 填入产品表单的 `images` 数组中
+5. 提交产品表单
+
 ---
 
 ## 五、前端开发要求
