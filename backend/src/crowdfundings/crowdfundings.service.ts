@@ -663,60 +663,145 @@ export class CrowdfundingsService {
 
   // 格式化众筹响应
   private formatCrowdfundingResponse(crowdfunding: any) {
-    return {
-      ...crowdfunding,
+    const result: any = {
       id: crowdfunding.id.toString(),
       productId: crowdfunding.productId.toString(),
       creatorId: crowdfunding.creatorId.toString(),
+      title: crowdfunding.title,
+      description: crowdfunding.description,
+      status: crowdfunding.status,
+      targetAmount: Number(crowdfunding.targetAmount),
+      currentAmount: Number(crowdfunding.currentAmount),
+      minInvestment: Number(crowdfunding.minInvestment),
+      deadline: crowdfunding.deadline,
       currentPeriodId: crowdfunding.currentPeriodId?.toString() || null,
       startPeriodId: crowdfunding.startPeriodId?.toString() || null,
       winnerSupplierId: crowdfunding.winnerSupplierId?.toString() || null,
       cancelledBy: crowdfunding.cancelledBy?.toString() || null,
       failedBy: crowdfunding.failedBy?.toString() || null,
-      targetAmount: Number(crowdfunding.targetAmount),
-      currentAmount: Number(crowdfunding.currentAmount),
-      minInvestment: Number(crowdfunding.minInvestment),
-      product: crowdfunding.product
-        ? {
-            ...crowdfunding.product,
-            id: crowdfunding.product.id.toString(),
-            creatorId: crowdfunding.product.creatorId.toString(),
-            factoryId: crowdfunding.product.factoryId?.toString() || null,
-          }
-        : undefined,
-      creator: crowdfunding.creator
-        ? {
-            ...crowdfunding.creator,
-            id: crowdfunding.creator.id.toString(),
-          }
-        : undefined,
-      currentPeriod: crowdfunding.currentPeriod
-        ? {
-            ...crowdfunding.currentPeriod,
-            id: crowdfunding.currentPeriod.id.toString(),
-          }
-        : undefined,
-      investments: crowdfunding.investments?.map((inv: any) => this.formatInvestmentResponse(inv)),
-      investorCount: crowdfunding._count?.investments,
+      successAt: crowdfunding.successAt,
+      cancelledAt: crowdfunding.cancelledAt,
+      failedAt: crowdfunding.failedAt,
+      createdAt: crowdfunding.createdAt,
+      updatedAt: crowdfunding.updatedAt,
     };
+
+    if (crowdfunding.product) {
+      result.product = {
+        id: crowdfunding.product.id.toString(),
+        name: crowdfunding.product.name,
+        productCode: crowdfunding.product.productCode,
+        description: crowdfunding.product.description,
+        designConcept: crowdfunding.product.designConcept,
+        sellingPoints: crowdfunding.product.sellingPoints,
+        specifications: crowdfunding.product.specifications,
+        crowdfundingStatus: crowdfunding.product.crowdfundingStatus,
+        creatorId: crowdfunding.product.creatorId.toString(),
+        factoryId: crowdfunding.product.factoryId?.toString() || null,
+        factoryPrice: crowdfunding.product.factoryPrice ? Number(crowdfunding.product.factoryPrice) : null,
+        createdAt: crowdfunding.product.createdAt,
+        updatedAt: crowdfunding.product.updatedAt,
+      };
+
+      // 产品图片
+      if (crowdfunding.product.images) {
+        result.product.images = crowdfunding.product.images.map((img: any) => ({
+          id: img.id.toString(),
+          productId: img.productId.toString(),
+          imageUrl: img.imageUrl,
+          imageType: img.imageType,
+          sortOrder: img.sortOrder,
+          createdAt: img.createdAt,
+        }));
+      }
+
+      // 产品创建者
+      if (crowdfunding.product.creator) {
+        result.product.creator = {
+          id: crowdfunding.product.creator.id.toString(),
+          username: crowdfunding.product.creator.username,
+          role: crowdfunding.product.creator.role,
+        };
+      }
+    }
+
+    if (crowdfunding.creator) {
+      result.creator = {
+        id: crowdfunding.creator.id.toString(),
+        username: crowdfunding.creator.username,
+        role: crowdfunding.creator.role,
+      };
+    }
+
+    if (crowdfunding.currentPeriod) {
+      result.currentPeriod = {
+        id: crowdfunding.currentPeriod.id.toString(),
+        periodNumber: crowdfunding.currentPeriod.periodNumber,
+        startDate: crowdfunding.currentPeriod.startDate,
+        endDate: crowdfunding.currentPeriod.endDate,
+        status: crowdfunding.currentPeriod.status,
+      };
+    }
+
+    if (crowdfunding.startPeriod) {
+      result.startPeriod = {
+        id: crowdfunding.startPeriod.id.toString(),
+        periodNumber: crowdfunding.startPeriod.periodNumber,
+        startDate: crowdfunding.startPeriod.startDate,
+        endDate: crowdfunding.startPeriod.endDate,
+        status: crowdfunding.startPeriod.status,
+      };
+    }
+
+    if (crowdfunding.winnerSupplier) {
+      result.winnerSupplier = {
+        id: crowdfunding.winnerSupplier.id.toString(),
+        username: crowdfunding.winnerSupplier.username,
+      };
+    }
+
+    if (crowdfunding.investments) {
+      result.investments = crowdfunding.investments.map((inv: any) => this.formatInvestmentResponse(inv));
+    }
+
+    if (crowdfunding._count) {
+      result.investorCount = crowdfunding._count.investments;
+    }
+
+    return result;
   }
 
   // 格式化出资记录响应
   private formatInvestmentResponse(investment: any) {
-    return {
-      ...investment,
+    const result: any = {
       id: investment.id.toString(),
       crowdfundingId: investment.crowdfundingId.toString(),
       userId: investment.userId.toString(),
       periodId: investment.periodId.toString(),
       amount: Number(investment.amount),
-      user: investment.user
-        ? {
-            ...investment.user,
-            id: investment.user.id.toString(),
-            parentId: investment.user.parentId?.toString() || null,
-          }
-        : undefined,
+      investmentType: investment.investmentType,
+      createdAt: investment.createdAt,
     };
+
+    if (investment.user) {
+      result.user = {
+        id: investment.user.id.toString(),
+        username: investment.user.username,
+        role: investment.user.role,
+        parentId: investment.user.parentId?.toString() || null,
+      };
+    }
+
+    if (investment.period) {
+      result.period = {
+        id: investment.period.id.toString(),
+        periodNumber: investment.period.periodNumber,
+        startDate: investment.period.startDate,
+        endDate: investment.period.endDate,
+        status: investment.period.status,
+      };
+    }
+
+    return result;
   }
 }
