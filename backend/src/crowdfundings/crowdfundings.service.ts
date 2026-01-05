@@ -150,8 +150,19 @@ export class CrowdfundingsService {
             },
           },
           currentPeriod: true,
-          _count: {
-            select: { investments: true },
+          investments: {
+            select: {
+              userId: true,
+              amount: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  role: true,
+                  parentId: true,
+                },
+              },
+            },
           },
         },
         skip: (page - 1) * pageSize,
@@ -161,12 +172,44 @@ export class CrowdfundingsService {
       this.prisma.crowdfunding.count({ where }),
     ]);
 
+    // 为每个众筹计算唯一参与人数和最高出资供应商
+    const items = await Promise.all(
+      crowdfundings.map(async (cf) => {
+        const formatted = this.formatCrowdfundingResponse(cf);
+
+        // 计算唯一参与人数
+        const uniqueUserIds = new Set(cf.investments.map((inv: any) => inv.userId.toString()));
+        formatted.investorCount = uniqueUserIds.size;
+
+        // 获取最高出资供应商
+        const topSupplier = await this.getTopSupplier(cf.id.toString());
+        formatted.topSupplier = topSupplier;
+
+        // 列表不需要返回完整的investments
+        delete formatted.investments;
+
+        return formatted;
+      }),
+    );
+
     return {
-      items: crowdfundings.map((cf) => this.formatCrowdfundingResponse(cf)),
+      items,
       total,
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  // 获取当前最高出资供应商（用于列表展示）
+  private async getTopSupplier(crowdfundingId: string): Promise<{ supplierName: string; totalAmount: number } | null> {
+    const ranking = await this.getSupplierRanking(crowdfundingId);
+    if (ranking.length === 0) {
+      return null;
+    }
+    return {
+      supplierName: ranking[0].supplierName,
+      totalAmount: ranking[0].totalAmount,
     };
   }
 
@@ -225,8 +268,12 @@ export class CrowdfundingsService {
     // 计算供应商排名
     const supplierRanking = await this.getSupplierRanking(id);
 
+    // 计算唯一参与人数
+    const uniqueUserIds = new Set(crowdfunding.investments.map((inv: any) => inv.userId.toString()));
+
     return {
       ...this.formatCrowdfundingResponse(crowdfunding),
+      investorCount: uniqueUserIds.size,
       supplierRanking,
     };
   }
