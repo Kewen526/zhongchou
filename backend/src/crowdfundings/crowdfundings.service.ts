@@ -808,7 +808,11 @@ export class CrowdfundingsService {
     }
 
     if (crowdfunding.investments) {
-      result.investments = crowdfunding.investments.map((inv: any) => this.formatInvestmentResponse(inv));
+      // 检查是否为完整的 investment 对象（有 id 字段）
+      // 列表查询只选择部分字段，不需要格式化
+      if (crowdfunding.investments.length > 0 && crowdfunding.investments[0].id) {
+        result.investments = crowdfunding.investments.map((inv: any) => this.formatInvestmentResponse(inv));
+      }
     }
 
     if (crowdfunding._count) {
