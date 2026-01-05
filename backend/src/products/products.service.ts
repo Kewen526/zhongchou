@@ -266,38 +266,82 @@ export class ProductsService {
 
   // 格式化产品响应
   private formatProductResponse(product: any) {
-    return {
-      ...product,
+    const result: any = {
       id: product.id.toString(),
+      name: product.name,
+      productCode: product.productCode,
+      description: product.description,
+      designConcept: product.designConcept,
+      sellingPoints: product.sellingPoints,
+      specifications: product.specifications,
+      crowdfundingStatus: product.crowdfundingStatus,
       creatorId: product.creatorId.toString(),
       factoryId: product.factoryId?.toString() || null,
       factoryPrice: product.factoryPrice ? Number(product.factoryPrice) : null,
-      creator: product.creator
-        ? {
-            ...product.creator,
-            id: product.creator.id.toString(),
-          }
-        : undefined,
-      factory: product.factory
-        ? {
-            ...product.factory,
-            id: product.factory.id.toString(),
-          }
-        : undefined,
-      images: product.images?.map((img: any) => ({
-        ...img,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    };
+
+    if (product.creator) {
+      result.creator = {
+        id: product.creator.id.toString(),
+        username: product.creator.username,
+        role: product.creator.role,
+      };
+    }
+
+    if (product.factory) {
+      result.factory = {
+        id: product.factory.id.toString(),
+        username: product.factory.username,
+      };
+    }
+
+    if (product.images) {
+      result.images = product.images.map((img: any) => ({
         id: img.id.toString(),
         productId: img.productId.toString(),
-      })),
-      crowdfunding: product.crowdfunding
-        ? {
-            ...product.crowdfunding,
-            id: product.crowdfunding.id.toString(),
-            productId: product.crowdfunding.productId.toString(),
-            currentAmount: Number(product.crowdfunding.currentAmount),
-            targetAmount: Number(product.crowdfunding.targetAmount),
-          }
-        : null,
-    };
+        imageUrl: img.imageUrl,
+        imageType: img.imageType,
+        sortOrder: img.sortOrder,
+        createdAt: img.createdAt,
+      }));
+    }
+
+    if (product.crowdfunding) {
+      result.crowdfunding = {
+        id: product.crowdfunding.id.toString(),
+        status: product.crowdfunding.status,
+        currentAmount: Number(product.crowdfunding.currentAmount),
+        targetAmount: Number(product.crowdfunding.targetAmount),
+      };
+
+      // 如果有 productId 字段（来自 findOne 查询）
+      if (product.crowdfunding.productId) {
+        result.crowdfunding.productId = product.crowdfunding.productId.toString();
+      }
+
+      // 如果有 investments 字段（来自 findOne 查询）
+      if (product.crowdfunding.investments) {
+        result.crowdfunding.investments = product.crowdfunding.investments.map((inv: any) => ({
+          id: inv.id.toString(),
+          crowdfundingId: inv.crowdfundingId.toString(),
+          userId: inv.userId.toString(),
+          amount: Number(inv.amount),
+          investmentType: inv.investmentType,
+          periodId: inv.periodId.toString(),
+          createdAt: inv.createdAt,
+          user: inv.user ? {
+            id: inv.user.id.toString(),
+            username: inv.user.username,
+            role: inv.user.role,
+          } : undefined,
+        }));
+      }
+    } else {
+      result.crowdfunding = null;
+    }
+
+    return result;
   }
 }
