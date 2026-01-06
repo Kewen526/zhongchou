@@ -1,12 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-import * as COS from 'cos-nodejs-sdk-v5';
 import * as path from 'path';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const COS = require('cos-nodejs-sdk-v5');
 
 @Injectable()
 export class UploadService {
-  private cos: COS;
+  private cos: any;
   private bucket: string;
   private region: string;
 
