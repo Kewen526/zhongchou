@@ -30,7 +30,7 @@ export class FundsService {
 
   // 获取资金总览
   async getOverview(queryDto: QueryFundOverviewDto) {
-    let periodId = queryDto.periodId;
+    let periodId: string = queryDto.periodId || '';
 
     if (!periodId) {
       const currentPeriod = await this.periodsService.getCurrentPeriod();
