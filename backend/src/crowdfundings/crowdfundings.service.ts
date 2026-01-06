@@ -239,7 +239,7 @@ export class CrowdfundingsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUserId?: string) {
     const crowdfunding = await this.prisma.crowdfunding.findUnique({
       where: { id: BigInt(id) },
       include: {
@@ -297,10 +297,50 @@ export class CrowdfundingsService {
     // 计算唯一参与人数
     const uniqueUserIds = new Set(crowdfunding.investments.map((inv: any) => inv.userId.toString()));
 
+    // 计算当前用户的出资信息
+    let myInvestment: {
+      hasInvested: boolean;
+      totalAmount: number;
+      initialAmount: number;
+      additionalAmount: number;
+      investments: any[];
+    } | null = null;
+
+    if (currentUserId) {
+      const userInvestments = crowdfunding.investments.filter(
+        (inv: any) => inv.userId.toString() === currentUserId
+      );
+
+      if (userInvestments.length > 0) {
+        const initialInv = userInvestments.find((inv: any) => inv.investmentType === 'initial');
+        const additionalInvs = userInvestments.filter((inv: any) => inv.investmentType === 'additional');
+
+        const initialAmount = initialInv ? Number(initialInv.amount) : 0;
+        const additionalAmount = additionalInvs.reduce((sum: number, inv: any) => sum + Number(inv.amount), 0);
+
+        myInvestment = {
+          hasInvested: !!initialInv,
+          totalAmount: initialAmount + additionalAmount,
+          initialAmount,
+          additionalAmount,
+          investments: userInvestments.map((inv: any) => this.formatInvestmentResponse(inv)),
+        };
+      } else {
+        myInvestment = {
+          hasInvested: false,
+          totalAmount: 0,
+          initialAmount: 0,
+          additionalAmount: 0,
+          investments: [],
+        };
+      }
+    }
+
     return {
       ...this.formatCrowdfundingResponse(crowdfunding),
       investorCount: uniqueUserIds.size,
       supplierRanking,
+      myInvestment,
     };
   }
 
