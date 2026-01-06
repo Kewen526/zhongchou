@@ -63,7 +63,7 @@ export class UploadService {
           Body: file.buffer,
           ContentType: file.mimetype,
         },
-        (err) => {
+        (err: any) => {
           if (err) {
             reject(new BadRequestException(`文件上传失败: ${err.message}`));
           } else {
@@ -106,7 +106,7 @@ export class UploadService {
           Region: this.region,
           Key: key,
         },
-        (err) => {
+        (err: any) => {
           if (err) {
             reject(new BadRequestException(`文件删除失败: ${err.message}`));
           } else {
