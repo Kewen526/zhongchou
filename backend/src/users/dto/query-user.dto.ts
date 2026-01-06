@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsInt, Min, IsDateString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UserRole } from '@prisma/client';
@@ -17,11 +17,26 @@ export class QueryUserDto {
   @IsEnum(UserRole)
   role?: UserRole;
 
+  @ApiPropertyOptional({ description: '上级用户ID' })
+  @IsOptional()
+  @IsString()
+  parentId?: string;
+
   @ApiPropertyOptional({ description: '状态：1启用 0禁用' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   status?: number;
+
+  @ApiPropertyOptional({ description: '开始日期（创建时间）', example: '2024-01-01' })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: '结束日期（创建时间）', example: '2024-12-31' })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()

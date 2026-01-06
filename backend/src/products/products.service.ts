@@ -54,7 +54,7 @@ export class ProductsService {
   }
 
   async findAll(queryDto: QueryProductDto) {
-    const { name, productCode, crowdfundingStatus, creatorId, page = 1, pageSize = 10 } = queryDto;
+    const { name, productCode, crowdfundingStatus, creatorId, factoryId, startDate, endDate, page = 1, pageSize = 10 } = queryDto;
 
     const where: any = {};
 
@@ -72,6 +72,21 @@ export class ProductsService {
 
     if (creatorId) {
       where.creatorId = BigInt(creatorId);
+    }
+
+    if (factoryId) {
+      where.factoryId = BigInt(factoryId);
+    }
+
+    // 时间范围筛选
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate + 'T23:59:59.999Z');
+      }
     }
 
     const [products, total] = await Promise.all([

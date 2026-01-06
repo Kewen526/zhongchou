@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsInt, Min, IsDateString, IsNumber } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CrowdfundingProjectStatus } from '@prisma/client';
@@ -23,6 +23,35 @@ export class QueryCrowdfundingDto {
   @IsOptional()
   @IsString()
   creatorId?: string;
+
+  @ApiPropertyOptional({ description: '产品ID' })
+  @IsOptional()
+  @IsString()
+  productId?: string;
+
+  @ApiPropertyOptional({ description: '开始日期（创建时间）', example: '2024-01-01' })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: '结束日期（创建时间）', example: '2024-12-31' })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: '最小目标金额' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  minAmount?: number;
+
+  @ApiPropertyOptional({ description: '最大目标金额' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxAmount?: number;
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()

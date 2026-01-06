@@ -76,7 +76,7 @@ export class UsersService {
   }
 
   async findAll(queryDto: QueryUserDto) {
-    const { username, role, status, page = 1, pageSize = 10 } = queryDto;
+    const { username, role, parentId, status, startDate, endDate, page = 1, pageSize = 10 } = queryDto;
 
     const where: any = {};
 
@@ -88,8 +88,23 @@ export class UsersService {
       where.role = role;
     }
 
+    if (parentId) {
+      where.parentId = BigInt(parentId);
+    }
+
     if (status !== undefined) {
       where.status = status;
+    }
+
+    // 时间范围筛选
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate + 'T23:59:59.999Z');
+      }
     }
 
     const [users, total] = await Promise.all([

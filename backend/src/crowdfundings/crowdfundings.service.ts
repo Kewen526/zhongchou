@@ -110,7 +110,7 @@ export class CrowdfundingsService {
   }
 
   async findAll(queryDto: QueryCrowdfundingDto) {
-    const { title, status, periodId, creatorId, page = 1, pageSize = 10 } = queryDto;
+    const { title, status, periodId, creatorId, productId, startDate, endDate, minAmount, maxAmount, page = 1, pageSize = 10 } = queryDto;
 
     const where: any = {};
 
@@ -128,6 +128,32 @@ export class CrowdfundingsService {
 
     if (creatorId) {
       where.creatorId = BigInt(creatorId);
+    }
+
+    if (productId) {
+      where.productId = BigInt(productId);
+    }
+
+    // 时间范围筛选
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate + 'T23:59:59.999Z');
+      }
+    }
+
+    // 金额范围筛选（目标金额）
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      where.targetAmount = {};
+      if (minAmount !== undefined) {
+        where.targetAmount.gte = minAmount;
+      }
+      if (maxAmount !== undefined) {
+        where.targetAmount.lte = maxAmount;
+      }
     }
 
     const [crowdfundings, total] = await Promise.all([
