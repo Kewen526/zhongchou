@@ -273,7 +273,7 @@ export class UsersService {
     let currentId: string | null = userId;
 
     while (currentId) {
-      const userRecord = await this.prisma.user.findUnique({
+      const userRecord: { parentId: bigint | null } | null = await this.prisma.user.findUnique({
         where: { id: BigInt(currentId) },
         select: { parentId: true },
       });
