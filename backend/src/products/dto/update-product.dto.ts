@@ -60,6 +60,16 @@ export class UpdateProductDto {
   @IsString()
   patentStatus?: string;
 
+  @ApiPropertyOptional({ description: '类目' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: '产品描述' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiPropertyOptional({ description: '产品图片', type: [ProductImageDto] })
   @IsOptional()
   @IsArray()

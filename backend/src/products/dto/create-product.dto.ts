@@ -77,6 +77,16 @@ export class CreateProductDto {
   @IsString()
   patentStatus?: string;
 
+  @ApiPropertyOptional({ description: '类目', example: '电子产品' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: '产品描述', example: '这是一款智能手表，具有心率监测、运动追踪等功能...' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiProperty({ description: '产品图片', type: [ProductImageDto] })
   @IsArray()
   @ValidateNested({ each: true })

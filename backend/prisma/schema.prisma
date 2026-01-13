@@ -118,6 +118,8 @@ model Product {
   weight             Int?                @db.UnsignedInt
   packageSize        String?             @map("package_size") @db.VarChar(100)
   patentStatus       String?             @map("patent_status") @db.VarChar(50)
+  category           String?             @db.VarChar(100)
+  description        String?             @db.Text
   crowdfundingStatus CrowdfundingStatus  @default(not_started) @map("crowdfunding_status")
   creatorId          BigInt              @map("creator_id") @db.UnsignedBigInt
   createdAt          DateTime            @default(now()) @map("created_at")
