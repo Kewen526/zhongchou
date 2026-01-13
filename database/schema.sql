@@ -74,6 +74,8 @@ CREATE TABLE products (
     weight INT UNSIGNED NULL COMMENT '产品重量（克）',
     package_size VARCHAR(100) NULL COMMENT '包装尺寸',
     patent_status VARCHAR(50) NULL COMMENT '专利状态',
+    category VARCHAR(100) NULL COMMENT '类目',
+    description TEXT NULL COMMENT '产品描述',
     crowdfunding_status ENUM(
         'not_started',  -- 未发起众筹
         'in_progress',  -- 众筹进行中
