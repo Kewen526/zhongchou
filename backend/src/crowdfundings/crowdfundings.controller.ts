@@ -75,7 +75,7 @@ export class CrowdfundingsController {
   @ApiResponse({ status: 200, description: '获取成功' })
   @ApiResponse({ status: 404, description: '众筹项目不存在' })
   findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.crowdfundingsService.findOne(id, user.id);
+    return this.crowdfundingsService.findOne(id, user.id, user.role);
   }
 
   @Get(':id/ranking')

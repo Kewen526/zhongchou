@@ -239,7 +239,7 @@ export class CrowdfundingsService {
     };
   }
 
-  async findOne(id: string, currentUserId?: string) {
+  async findOne(id: string, currentUserId?: string, currentUserRole?: UserRole) {
     const crowdfunding = await this.prisma.crowdfunding.findUnique({
       where: { id: BigInt(id) },
       include: {
@@ -294,6 +294,16 @@ export class CrowdfundingsService {
     // 计算供应商排名
     const supplierRanking = await this.getSupplierRanking(id);
 
+    // 计算所有用户出资排名
+    const allInvestorRanking = await this.getAllInvestorRanking(id);
+
+    // 获取最高出资供应商
+    const topSupplier = supplierRanking.length > 0 ? {
+      supplierId: supplierRanking[0].supplierId,
+      supplierName: supplierRanking[0].supplierName,
+      totalAmount: supplierRanking[0].totalAmount,
+    } : null;
+
     // 计算唯一参与人数
     const uniqueUserIds = new Set(crowdfunding.investments.map((inv: any) => inv.userId.toString()));
 
@@ -304,6 +314,13 @@ export class CrowdfundingsService {
       initialAmount: number;
       additionalAmount: number;
       investments: any[];
+    } | null = null;
+
+    // 计算当前用户的排名信息
+    let myRanking: {
+      rank: number;
+      totalAmount: number;
+      isSupplier: boolean;
     } | null = null;
 
     if (currentUserId) {
@@ -334,13 +351,49 @@ export class CrowdfundingsService {
           investments: [],
         };
       }
+
+      // 计算当前用户的排名
+      const isSupplier = currentUserRole ? this.supplierRoles.includes(currentUserRole) : false;
+
+      if (isSupplier) {
+        // 供应商角色：在供应商排名中查找（需要考虑子账号归属主账号）
+        const user = await this.prisma.user.findUnique({
+          where: { id: BigInt(currentUserId) },
+          select: { parentId: true },
+        });
+        const supplierId = currentUserRole === 'supplier_sub' && user?.parentId
+          ? user.parentId.toString()
+          : currentUserId;
+
+        const supplierRankItem = supplierRanking.find((r) => r.supplierId === supplierId);
+        if (supplierRankItem) {
+          myRanking = {
+            rank: supplierRankItem.rank,
+            totalAmount: supplierRankItem.totalAmount,
+            isSupplier: true,
+          };
+        }
+      } else {
+        // 非供应商角色：在总排名中查找
+        const rankItem = allInvestorRanking.find((r) => r.userId === currentUserId);
+        if (rankItem) {
+          myRanking = {
+            rank: rankItem.rank,
+            totalAmount: rankItem.totalAmount,
+            isSupplier: false,
+          };
+        }
+      }
     }
 
     return {
       ...this.formatCrowdfundingResponse(crowdfunding),
       investorCount: uniqueUserIds.size,
+      topSupplier,
       supplierRanking,
+      allInvestorRanking,
       myInvestment,
+      myRanking,
     };
   }
 
@@ -693,6 +746,53 @@ export class CrowdfundingsService {
 
     // 转换为数组并排序
     const ranking = Array.from(supplierTotals.values())
+      .sort((a, b) => b.totalAmount - a.totalAmount)
+      .map((item, index) => ({
+        rank: index + 1,
+        ...item,
+      }));
+
+    return ranking;
+  }
+
+  // 获取所有用户出资排名（非供应商角色使用）
+  async getAllInvestorRanking(crowdfundingId: string) {
+    // 获取所有出资记录
+    const investments = await this.prisma.investment.findMany({
+      where: {
+        crowdfundingId: BigInt(crowdfundingId),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    // 按用户分组计算总额
+    const userTotals = new Map<string, { userId: string; username: string; role: string; totalAmount: number }>();
+
+    for (const inv of investments) {
+      const odId = inv.user.id.toString();
+      const existing = userTotals.get(odId);
+      if (existing) {
+        existing.totalAmount += Number(inv.amount);
+      } else {
+        userTotals.set(odId, {
+          userId: odId,
+          username: inv.user.username,
+          role: inv.user.role,
+          totalAmount: Number(inv.amount),
+        });
+      }
+    }
+
+    // 转换为数组并排序
+    const ranking = Array.from(userTotals.values())
       .sort((a, b) => b.totalAmount - a.totalAmount)
       .map((item, index) => ({
         rank: index + 1,
