@@ -70,6 +70,16 @@ export class UpdateProductDto {
   @IsString()
   description?: string;
 
+  @ApiPropertyOptional({ description: '版本' })
+  @IsOptional()
+  @IsString()
+  version?: string;
+
+  @ApiPropertyOptional({ description: '专属' })
+  @IsOptional()
+  @IsString()
+  exclusive?: string;
+
   @ApiPropertyOptional({ description: '产品图片', type: [ProductImageDto] })
   @IsOptional()
   @IsArray()

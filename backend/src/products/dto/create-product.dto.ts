@@ -87,6 +87,16 @@ export class CreateProductDto {
   @IsString()
   description?: string;
 
+  @ApiPropertyOptional({ description: '版本', example: '1.0' })
+  @IsOptional()
+  @IsString()
+  version?: string;
+
+  @ApiPropertyOptional({ description: '专属', example: '平台专属' })
+  @IsOptional()
+  @IsString()
+  exclusive?: string;
+
   @ApiProperty({ description: '产品图片', type: [ProductImageDto] })
   @IsArray()
   @ValidateNested({ each: true })

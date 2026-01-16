@@ -76,6 +76,8 @@ CREATE TABLE products (
     patent_status VARCHAR(50) NULL COMMENT '专利状态',
     category VARCHAR(100) NULL COMMENT '类目',
     description TEXT NULL COMMENT '产品描述',
+    version VARCHAR(20) NULL COMMENT '版本',
+    exclusive VARCHAR(100) NULL COMMENT '专属',
     crowdfunding_status ENUM(
         'not_started',  -- 未发起众筹
         'in_progress',  -- 众筹进行中

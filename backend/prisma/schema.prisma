@@ -120,6 +120,8 @@ model Product {
   patentStatus       String?             @map("patent_status") @db.VarChar(50)
   category           String?             @db.VarChar(100)
   description        String?             @db.Text
+  version            String?             @db.VarChar(20)
+  exclusive          String?             @db.VarChar(100)
   crowdfundingStatus CrowdfundingStatus  @default(not_started) @map("crowdfunding_status")
   creatorId          BigInt              @map("creator_id") @db.UnsignedBigInt
   createdAt          DateTime            @default(now()) @map("created_at")
